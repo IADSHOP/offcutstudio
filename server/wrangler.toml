@@ -1,0 +1,16 @@
+name = "offcut-studio-orders"
+main = "worker.mjs"
+compatibility_date = "2026-10-09"
+workers_dev = true
+
+[vars]
+ALLOWED_ORIGINS = "https://iadshop.github.io,http://127.0.0.1:4173,http://localhost:4173"
+SEND_BUYER_CONFIRMATION = "false"
+
+[[durable_objects.bindings]]
+name = "ORDERS"
+class_name = "OffcutOrders"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["OffcutOrders"]
