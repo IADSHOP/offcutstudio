@@ -2,6 +2,8 @@
 
 此服務使用 OFFCUT 專屬 Cloudflare Worker + SQLite Durable Object；訂單不放 Google Sheet。部署前需先完成 [Gmail Relay 設定](../google-apps-script/SETUP.md)。
 
+Cloudflare Workers Builds 已連接 `IADSHOP/offcutstudio` 的 `main` 分支；Worker 部署使用 `npx wrangler deploy --config server/wrangler.toml`，並由 `server/wrangler.toml` 管理 Durable Object migration。
+
 ## 部署
 
 1. 在 Cloudflare 建立/登入 OFFCUT 自己的帳號或 Worker 專案；不要使用或覆寫 IAD SHOP 服飾站 Worker。
