@@ -88,7 +88,7 @@
       form.elements.paymentLastFive.focus();
       return;
     }
-    const updated = model.update(order.orderId, {
+    const submitted = {
       customerName,
       email,
       lineId,
@@ -100,29 +100,29 @@
       paymentReportSubmitted: true,
       paymentNotificationStatus: window.OFFCUT_ORDER_API?.configured ? 'PENDING' : 'NOT CONFIGURED',
       paymentStatus: 'PAYMENT REVIEW'
-    });
-    if (!updated) {
-      formError.textContent = '無法在此裝置儲存付款回報，請稍後再試。';
-      formError.hidden = false;
-      return;
-    }
-    order = updated;
-    model.rememberLookup(order);
+    };
     const submitButton = form.querySelector('[type="submit"]');
     submitButton.disabled = true;
-    submitButton.textContent = '已保存，正在前往素材頁…';
-    if (window.OFFCUT_EMAIL_ADAPTER) {
-      const notification = await Promise.race([
-        window.OFFCUT_EMAIL_ADAPTER.sendPaymentReport(order),
-        new Promise(resolve => window.setTimeout(() => resolve({ confirmed: false, reason: 'timeout' }), 3500))
-      ]);
-      const status = notification.confirmed ? 'SENT' : notification.dispatched ? 'DISPATCHED · UNCONFIRMED' : notification.reason === 'not-configured' ? 'NOT CONFIGURED' : 'FAILED';
-      order = model.update(order.orderId, { paymentNotificationStatus: status }) || order;
-      if (!notification.confirmed) console.warn('[OFFCUT] Payment report is saved and the customer will continue to materials. Notification status:', status, notification.reason);
-    } else {
-      order = model.update(order.orderId, { paymentNotificationStatus: 'NOT CONFIGURED' }) || order;
-      console.warn('[OFFCUT] Remote order backend not configured. Payment report is saved locally; no email was sent.');
+    submitButton.textContent = '正在提交付款回報…';
+    if (!window.OFFCUT_ORDER_API?.configured) {
+      formError.textContent = '付款回報服務尚未完成設定。付款不會因此失敗，請聯繫 OFFCUT；不需要重新付款。';
+      formError.hidden = false;
+      submitButton.disabled = false;
+      submitButton.textContent = '提交付款回報 並準備上傳素材 →';
+      return;
     }
+    const response = await window.OFFCUT_ORDER_API.sendPaymentReport({ ...order, ...submitted });
+    if (!response.ok || !response.order) {
+      const message = response.message || '訂單服務暫時無法確認這筆回報。';
+      formError.textContent = `${message} 請重試這份付款回報；不需要重新付款。`;
+      formError.hidden = false;
+      submitButton.disabled = false;
+      submitButton.textContent = '重試提交付款回報 →';
+      return;
+    }
+    order = model.update(order.orderId, { ...submitted, ...response.order, email: submitted.email, customerName: submitted.customerName, lineId: submitted.lineId, paymentLastFive: submitted.paymentLastFive, paymentTime: submitted.paymentTime, paymentReference: submitted.paymentReference, paymentNote: submitted.paymentNote, paymentReportSubmitted: true, paymentNotificationStatus: response.notification || 'QUEUED' }) || { ...order, ...submitted, ...response.order };
+    model.rememberLookup(order);
+    submitButton.textContent = '已保存，正在前往素材頁…';
     openMaterials(order);
   });
 })();

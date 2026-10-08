@@ -9,12 +9,11 @@
   <link rel="icon" type="image/png" href="./favicon.png.png">
   <link rel="apple-touch-icon" href="./favicon.png.png">
   <link rel="stylesheet" href="style.css?v=offcut-order-flow-2">
-  <script src="site-config.js?v=materials-methods-1" defer></script>
-  <script src="order-storage.js?v=offcut-order-flow-2" defer></script>
-  <script src="order-model.js?v=offcut-order-flow-2" defer></script>
-  <script src="order-api.js?v=materials-methods-1" defer></script>
-  <script src="email-adapter.js?v=materials-methods-1" defer></script>
-  <script src="payment-complete.js?v=offcut-order-flow-2" defer></script>
+  <script src="site-config.js?v=offcut-cloudflare-orders-1" defer></script>
+  <script src="order-storage.js?v=offcut-cloudflare-orders-1" defer></script>
+  <script src="order-model.js?v=offcut-cloudflare-orders-1" defer></script>
+  <script src="order-api.js?v=offcut-cloudflare-orders-1" defer></script>
+  <script src="payment-complete.js?v=offcut-cloudflare-orders-1" defer></script>
 </head>
 <body class="flow-page">
   <header class="topbar" aria-label="網站標題"><a class="wordmark" href="index.html" aria-label="OFFCUT STUDIO 首頁"><img src="OFFCUTSTUDIO-transparent.png" alt="OFFCUT STUDIO"></a><span class="edition">VIDEO EDITING&nbsp; / &nbsp;2017</span></header>
@@ -36,7 +35,7 @@
       <label data-payment-time-row hidden>付款時間（選填）<input name="paymentTime" type="datetime-local"></label>
       <label data-payment-reference-row hidden>付款備註／可辨識資訊（選填）<textarea name="paymentReference" rows="3" maxlength="500"></textarea></label>
       <label>客戶備註（選填）<textarea name="paymentNote" rows="3" maxlength="1000"></textarea></label>
-      <label class="file-report" data-payment-screenshot-row hidden>付款截圖（選填）<input name="paymentScreenshot" type="file" accept="image/*"><small>待後端串接。此原型不會上傳或保存所選圖片。</small></label>
+      <label class="file-report" data-payment-screenshot-row hidden>付款截圖（選填）<input name="paymentScreenshot" type="file" accept="image/*"><small>截圖不會經此表單上傳；請在付款辨識資訊中提供核對資料。</small></label>
       <p class="flow-error" data-form-error hidden></p>
       <button class="flow-primary" type="submit">提交付款回報 並準備上傳素材 →</button>
     </form>
@@ -49,7 +48,6 @@
       <a class="flow-text-link" href="order-lookup.html">前往訂單資訊 →</a>
       <a class="flow-contact-link" href="https://lin.ee/vr8g6ui" target="_blank" rel="noopener">LINE @909rowxh・聯繫 OFFCUT →</a>
     </section>
-    <p class="flow-prototype-note">此訂單原型僅儲存在建立訂單的同一瀏覽器與裝置。</p>
   </main>
 </body>
 </html>

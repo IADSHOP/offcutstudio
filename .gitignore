@@ -28,3 +28,9 @@
 *.3GP
 *.ts
 *.TS
+
+# Cloudflare local credentials/runtime and test artifacts.
+server/.dev.vars
+server/.wrangler/
+server/.env*
+!server/.env.example

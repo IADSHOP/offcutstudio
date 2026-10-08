@@ -1,7 +1,7 @@
 (() => {
   const KEY = 'offcutstudio.orders.v1';
   const adapter = {
-    type: 'localStorage prototype',
+    type: 'localStorage UX cache',
     key: KEY,
     scope: 'same browser and device only',
     readAll() {
@@ -19,6 +19,13 @@
         localStorage.setItem(KEY, JSON.stringify(orders));
         return order;
       } catch (_) { return null; }
+    },
+    remove(orderId) {
+      try {
+        const orders = this.readAll().filter(order => order.orderId !== orderId);
+        localStorage.setItem(KEY, JSON.stringify(orders));
+        return true;
+      } catch (_) { return false; }
     }
   };
   window.OFFCUT_ORDER_STORAGE = Object.freeze(adapter);

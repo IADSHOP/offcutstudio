@@ -52,6 +52,7 @@
 
   const params = new URLSearchParams(window.location.search);
   const orderModel = window.OFFCUT_ORDER_MODEL;
+  const orderApi = window.OFFCUT_ORDER_API;
   const orderIdFromUrl = params.get('orderId') || '';
   let activeOrder = orderModel?.get(orderIdFromUrl) || null;
   const requestedService = activeOrder?.service || params.get('service') || 'mini-vlog';
@@ -86,6 +87,7 @@
   const orderIdLabel = page.querySelector('[data-checkout-order-id]');
   const copyOrderButton = page.querySelector('[data-copy-order]');
   const copyFeedback = page.querySelector('[data-checkout-order-copy-feedback]');
+  const backendNote = page.querySelector('[data-checkout-backend-note]');
   const paymentRoutes = {
     bank: 'payment-bank.html',
     linepay: 'payment-linepay.html',
@@ -94,6 +96,10 @@
   let termsAccepted = false;
   let planConfirmed = false;
   let paymentMethod = activeOrder?.paymentMethod || null;
+  let remoteOrderState = activeOrder && orderApi?.configured ? 'pending' : 'unconfigured';
+  let remoteSignature = '';
+  let remoteGeneration = 0;
+  let collisionRetries = 0;
 
   paymentOptions.forEach(input => { input.checked = input.value === paymentMethod; });
 
@@ -122,6 +128,44 @@
     }
   }
 
+  const syncRemoteOrder = () => {
+    if (!activeOrder || !orderApi?.configured) {
+      remoteOrderState = 'unconfigured';
+      return;
+    }
+    if (activeOrder.paymentStatus !== 'PENDING PAYMENT') {
+      remoteOrderState = 'existing';
+      return;
+    }
+    const signature = [activeOrder.orderId, activeOrder.service, activeOrder.tier, activeOrder.price, activeOrder.pricingMode, activeOrder.paymentMethod].join('|');
+    if (signature === remoteSignature && ['pending', 'ready'].includes(remoteOrderState)) return;
+    remoteSignature = signature;
+    remoteOrderState = 'pending';
+    const generation = ++remoteGeneration;
+    orderApi.createOrder(activeOrder).then(result => {
+      if (generation !== remoteGeneration) return;
+      if (result.ok && result.order) {
+        activeOrder = orderModel.update(activeOrder.orderId, result.order) || activeOrder;
+        remoteOrderState = 'ready';
+        collisionRetries = 0;
+      } else if (result.code === 'ORDER_ID_COLLISION' && collisionRetries < 3) {
+        collisionRetries += 1;
+        const rotated = orderModel.rotateCollidingId(activeOrder.orderId);
+        if (rotated) {
+          activeOrder = rotated;
+          remoteSignature = '';
+          remoteOrderState = 'pending';
+          syncCheckout();
+          return;
+        }
+        remoteOrderState = 'failed';
+      } else {
+        remoteOrderState = 'failed';
+      }
+      syncCheckout();
+    });
+  };
+
   const syncCheckout = () => {
     termsAccepted = agreements[0]?.checked === true;
     planConfirmed = agreements[1]?.checked === true;
@@ -132,16 +176,30 @@
     } else if (complete && activeOrder?.paymentStatus === 'PENDING PAYMENT' && activeOrder.paymentMethod !== paymentMethod) {
       activeOrder = orderModel.update(activeOrder.orderId, { paymentMethod });
     }
+    if (complete && activeOrder?.paymentStatus === 'PENDING PAYMENT') syncRemoteOrder();
     const alreadyReported = activeOrder?.paymentStatus === 'PAYMENT REVIEW';
-    const canContinue = complete && Boolean(activeOrder) && activeOrder.paymentStatus === 'PENDING PAYMENT';
+    const canContinue = complete && Boolean(activeOrder) && activeOrder.paymentStatus === 'PENDING PAYMENT' && remoteOrderState === 'ready';
     continueButton.disabled = !canContinue;
     orderPanel.hidden = !activeOrder;
     if (activeOrder) orderIdLabel.textContent = activeOrder.orderId;
     status.textContent = alreadyReported
       ? '此訂單已回報付款，請等待 OFFCUT 確認。'
+      : !orderApi?.configured && complete
+        ? '線上訂單服務尚未完成設定，目前無法建立正式訂單。'
+        : remoteOrderState === 'pending'
+          ? '正在安全保存訂單…'
+          : remoteOrderState === 'failed'
+            ? '訂單服務暫時無法連線，請重新選擇付款方式或稍後重試；不需要重新下單。'
       : complete && !activeOrder
         ? '目前無法在此裝置保存訂單，請稍後再試。'
         : canContinue ? '' : '請完成條款確認並選擇付款方式';
+    if (backendNote) backendNote.textContent = !orderApi?.configured
+      ? '正式訂單服務尚未設定；目前顯示的編號僅為本機暫存。'
+      : remoteOrderState === 'ready' || remoteOrderState === 'existing'
+        ? '訂單已安全保存於 OFFCUT 訂單服務。'
+        : remoteOrderState === 'pending'
+          ? '正在保存訂單至 OFFCUT 訂單服務…'
+          : '訂單服務暫時無法連線；訂單尚未建立。';
   };
 
   agreements.forEach(input => input.addEventListener('change', syncCheckout));

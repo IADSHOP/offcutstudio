@@ -19,6 +19,14 @@
     return [...values].map(value => ID_CHARS[value % ID_CHARS.length]).join('');
   }
 
+  function requestId() {
+    if (window.crypto?.randomUUID) return window.crypto.randomUUID();
+    const values = new Uint8Array(18);
+    if (window.crypto?.getRandomValues) window.crypto.getRandomValues(values);
+    else for (let i = 0; i < values.length; i += 1) values[i] = Math.floor(Math.random() * 256);
+    return [...values].map(value => value.toString(16).padStart(2, '0')).join('');
+  }
+
   function createOrder(data) {
     const now = new Date();
     const date = `${String(now.getFullYear()).slice(-2)}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
@@ -27,6 +35,7 @@
     const stamp = now.toISOString();
     return write({
       orderId,
+      creationRequestId: requestId(),
       service: data.service,
       tier: data.tier,
       price: Number(data.price),
@@ -64,6 +73,20 @@
     const order = get(orderId);
     if (!order) return null;
     return write({ ...order, ...changes, orderId: order.orderId, updatedAt: new Date().toISOString() });
+  }
+
+  function rotateCollidingId(orderId) {
+    const order = get(orderId);
+    if (!order) return null;
+    const previousId = order.orderId;
+    let nextId;
+    do {
+      const now = new Date();
+      const date = `${String(now.getFullYear()).slice(-2)}${String(now.getMonth() + 1).padStart(2, '0')}${String(now.getDate()).padStart(2, '0')}`;
+      nextId = `OFF-${date}-${randomCode()}`;
+    } while (readAll().some(item => item.orderId === nextId));
+    if (storage?.remove && !storage.remove(previousId)) return null;
+    return write({ ...order, orderId: nextId, creationRequestId: requestId(), createdAt: new Date().toISOString(), updatedAt: new Date().toISOString() });
   }
 
   function cacheRemote(order) {
@@ -116,6 +139,7 @@
     get,
     all: readAll,
     update,
+    rotateCollidingId,
     cacheRemote,
     findByCredentials,
     rememberLookup,

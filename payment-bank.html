@@ -9,9 +9,11 @@
   <link rel="icon" type="image/png" href="./favicon.png.png">
   <link rel="apple-touch-icon" href="./favicon.png.png">
   <link rel="stylesheet" href="style.css?v=offcut-order-flow-2">
-  <script src="order-storage.js?v=offcut-order-flow-2" defer></script>
-  <script src="order-model.js?v=offcut-order-flow-2" defer></script>
-  <script src="order-summary.js?v=offcut-order-flow-2" defer></script>
+  <script src="order-storage.js?v=offcut-cloudflare-orders-1" defer></script>
+  <script src="order-model.js?v=offcut-cloudflare-orders-1" defer></script>
+  <script src="site-config.js?v=offcut-orders-backend-1" defer></script>
+  <script src="order-api.js?v=offcut-orders-backend-1" defer></script>
+  <script src="order-summary.js?v=offcut-cloudflare-orders-1" defer></script>
 </head>
 <body class="payment-page">
   <header class="topbar" aria-label="網站標題"><a class="wordmark" href="index.html" aria-label="OFFCUT STUDIO 首頁"><img src="OFFCUTSTUDIO-transparent.png" alt="OFFCUT STUDIO"></a><span class="edition">VIDEO EDITING&nbsp; / &nbsp;2017</span></header>
@@ -40,7 +42,7 @@
         <p>請依上方資訊完成轉帳。完成後請保留付款紀錄，並回報付款資訊。</p>
       </section>
     </div>
-    <p class="payment-local-note" data-order-local-note>此訂單資料目前只保存在建立訂單的瀏覽器與裝置。</p>
+    <p class="payment-local-note" data-order-local-note>訂單會保存在 OFFCUT 訂單服務。</p>
     <a class="payment-report-resume" data-resume-report hidden>繼續付款回報 →</a>
     <button class="checkout-continue payment-done" type="button" data-payment-done disabled>我已完成付款 <span aria-hidden="true">→</span></button>
     <p class="payment-status-note" data-payment-status-note aria-live="polite"></p>

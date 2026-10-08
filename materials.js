@@ -59,8 +59,8 @@
 
   const backendNote = page.querySelector('[data-material-backend-note]');
   backendNote.textContent = api?.configured
-    ? '遠端訂單服務已設定。若瀏覽器無法確認回應，OFFCUT 可在 Notification Log 檢查同步與通知結果。'
-    : '此瀏覽器尚未連接 OFFCUT 訂單表；本機測試資料只保存在此裝置。';
+    ? '訂單與素材提交資料由 OFFCUT Cloudflare 訂單服務保存；Email 通知會由後端排隊處理。'
+    : '遠端訂單服務尚未設定；目前不能正式提交素材。';
 
   form.addEventListener('submit', async event => {
     event.preventDefault();
@@ -75,38 +75,31 @@
     if (!form.reportValidity()) return;
     const submit = page.querySelector('[data-material-link-submit]');
     submit.disabled = true;
-    const updated = model.update(order.orderId, {
+    if (!api?.configured) {
+      showMessage('遠端訂單服務尚未設定，素材連結尚未提交。請聯繫 OFFCUT。', true);
+      submit.disabled = false;
+      return;
+    }
+    const materialRequestId = await digestKey(`${order.orderId}|${link}|${form.elements.materialNote.value.trim()}`);
+    const candidate = {
+      ...order,
       materialMethod: 'EXTERNAL LINK',
       materialLink: link,
       materialNote: form.elements.materialNote.value.trim(),
       materialStatus: 'SUBMITTED',
       materialReportedAt: new Date().toISOString(),
-      materialNotificationStatus: api?.configured ? 'PENDING' : 'NOT CONFIGURED'
-    });
-    if (!updated) {
+      materialNotificationStatus: 'QUEUED',
+      materialRequestId
+    };
+    const result = await api.submitMaterialLink(candidate);
+    if (!result.ok || !result.order) {
+      showMessage(`${result.message || '目前無法提交素材連結。'} 請重試；資料尚未標記為已提交。`, true);
       submit.disabled = false;
-      showMessage('無法在此裝置保存素材連結，請稍後重試。', true);
       return;
     }
-    order = updated;
+    order = model.update(order.orderId, { ...candidate, ...result.order, email: order.email, customerName: order.customerName, lineId: order.lineId, materialRequestId }) || candidate;
     renderOrder();
-    if (!api?.configured) {
-      console.warn('[OFFCUT] Remote order backend not configured. Material link is saved on this device only.');
-      order = model.update(order.orderId, { materialNotificationStatus: 'NOT CONFIGURED' }) || order;
-      showMessage('素材連結已在此裝置保存。遠端訂單表與 Email 通知尚未設定；請聯繫 OFFCUT 確認收件。');
-      submit.disabled = false;
-      return;
-    }
-    const result = await Promise.race([
-      api.submitMaterialLink(order),
-      new Promise(resolve => window.setTimeout(() => resolve({ dispatched: false, reason: 'timeout' }), 3500))
-    ]);
-    const status = result.dispatched ? 'DISPATCHED · UNCONFIRMED' : 'FAILED';
-    order = model.update(order.orderId, { materialNotificationStatus: status }) || order;
-    if (!result.dispatched) console.warn('[OFFCUT] Material submission is saved locally; remote synchronization/notification did not dispatch.', result.reason);
-    showMessage(result.dispatched
-      ? '素材連結已保存並已送出同步請求。瀏覽器無法讀取 Apps Script 的回覆；若訂單狀態尚未更新，請聯繫 OFFCUT。'
-      : '素材連結已在此裝置保存，但同步請求未送出。請聯繫 OFFCUT 確認收件。');
+    showMessage('素材連結已提交並保存至訂單。');
     submit.disabled = false;
   });
 
@@ -119,26 +112,38 @@
     formDisabled.hidden = true;
   }
 
-  page.querySelector('[data-usb-action]').addEventListener('click', () => {
-    order = model.update(order.orderId, {
+  page.querySelector('[data-usb-action]').addEventListener('click', async () => {
+    if (!api?.configured) {
+      showMessage('遠端訂單服務尚未設定，USB 寄送方式尚未記錄。請聯繫 OFFCUT。', true);
+      return;
+    }
+    const button = page.querySelector('[data-usb-action]');
+    button.disabled = true;
+    const candidate = {
+      ...order,
       materialMethod: 'USB',
       materialLink: '',
       materialStatus: 'AWAITING DELIVERY',
       materialReportedAt: new Date().toISOString(),
-      materialNotificationStatus: api?.configured ? 'PENDING' : 'NOT CONFIGURED'
-    }) || order;
+      materialNotificationStatus: 'QUEUED'
+    };
+    const result = await api.selectUsb(candidate);
+    if (!result.ok || !result.order) {
+      showMessage(`${result.message || '目前無法記錄 USB 寄送方式。'} 請稍後重試。`, true);
+      button.disabled = false;
+      return;
+    }
+    order = model.update(order.orderId, { ...candidate, ...result.order, email: order.email, customerName: order.customerName, lineId: order.lineId }) || candidate;
     renderOrder();
     showMessage('已記錄 USB 寄送方式；素材尚未收到。請透過 LINE 先取得寄送資訊。');
-    if (api?.configured) {
-      api.selectUsb(order).then(result => {
-        const status = result.dispatched ? 'DISPATCHED · UNCONFIRMED' : 'FAILED';
-        order = model.update(order.orderId, { materialNotificationStatus: status }) || order;
-        if (!result.dispatched) console.warn('[OFFCUT] USB selection was saved locally; remote notification did not dispatch.', result.reason);
-      });
-    } else {
-      console.warn('[OFFCUT] Remote order backend not configured. USB selection is saved on this device only.');
-    }
+    button.disabled = false;
   });
 
   panel.hidden = false;
+
+  async function digestKey(value) {
+    const bytes = new TextEncoder().encode(value);
+    const hash = new Uint8Array(await crypto.subtle.digest('SHA-256', bytes));
+    return `mr${[...hash].slice(0, 18).map(byte => byte.toString(16).padStart(2, '0')).join('')}`;
+  }
 })();

@@ -14,6 +14,7 @@
   const params = new URLSearchParams(window.location.search);
   const orderId = params.get('orderId') || '';
   const order = model.get(orderId);
+  const api = window.OFFCUT_ORDER_API;
   const expectedMethod = page.dataset.method;
   const copyFeedback = (selector, feedbackSelector, text, value) => {
     const button = page.querySelector(selector);
@@ -53,11 +54,15 @@
   const done = page.querySelector('[data-payment-done]');
   const status = page.querySelector('[data-payment-status-note]');
   if (!order) {
-    noOrder.textContent = '此裝置找不到這筆訂單的本機資料。請回到建立訂單時使用的瀏覽器與裝置。';
-    status.textContent = '訂單資料僅存在建立訂單的本機瀏覽器。';
+    noOrder.textContent = '此裝置找不到訂單資料。請返回「訂單資訊」使用訂單編號與 Email 查詢。';
+    status.textContent = '無法載入此筆訂單。';
     done.disabled = true;
     return;
   }
+
+  noOrder.textContent = api?.configured
+    ? '此訂單已保存於 OFFCUT 訂單服務。付款回報後狀態會顯示為等待人工確認。'
+    : 'OFFCUT 線上訂單服務尚未完成設定，目前無法進行正式付款回報。';
 
   const methodMatches = order.paymentMethod === expectedMethod;
   page.querySelector('[data-payment-order-id]').textContent = order.orderId;
@@ -87,6 +92,11 @@
 
   if (!methodMatches) {
     status.textContent = `這筆訂單的付款方式為「${paymentLabels[order.paymentMethod] || order.paymentMethod}」，請回訂單確認頁更換付款方式。`;
+    done.disabled = true;
+    return;
+  }
+  if (!api?.configured) {
+    status.textContent = '線上訂單服務尚未完成設定。請聯繫 OFFCUT；不需要重新付款。';
     done.disabled = true;
     return;
   }

@@ -6,7 +6,7 @@
   const form = page.querySelector('[data-lookup-form]');
   const error = page.querySelector('[data-lookup-error]');
   const backendNote = page.querySelector('[data-lookup-backend-note]');
-  if (backendNote && api?.configured) backendNote.textContent = '訂單資訊由 OFFCUT 訂單表同步。請輸入訂單編號與付款回報 Email。';
+  if (backendNote && api?.configured) backendNote.textContent = '訂單資訊由 OFFCUT 訂單服務同步。請輸入訂單編號與付款回報 Email。';
   form.addEventListener('submit', async event => {
     event.preventDefault();
     error.hidden = true;

@@ -347,6 +347,7 @@ main { position: relative; width: 100%; height: 100svh; min-height: 550px; }
 .report-form { margin-top: 26px; display: grid; grid-template-columns: repeat(2, minmax(0,1fr)); gap: 16px 22px; }
 .report-form h2 { grid-column: 1 / -1; margin: 0; color: #66655f; font: 400 9px/1.5 'DM Mono', monospace; letter-spacing: .14em; }
 .report-form label, .lookup-form label { min-width: 0; display: grid; gap: 7px; color: #66655f; font-size: 10px; line-height: 1.5; }
+.report-form [hidden] { display: none !important; }
 .report-form input, .report-form textarea, .lookup-form input { width: 100%; min-height: 42px; padding: 10px 11px; border: 1px solid rgba(37,37,35,.17); border-radius: 0; background: rgba(255,255,255,.14); color: var(--fg); font: 400 16px/1.4 Manrope, Arial, sans-serif; }
 .report-form textarea { resize: vertical; }
 .report-form input:focus, .report-form textarea:focus, .lookup-form input:focus { outline: 1px solid #a55547; outline-offset: 1px; }

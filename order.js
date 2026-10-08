@@ -19,7 +19,7 @@
   const materials = { 'NOT SUBMITTED': '尚未提交', SUBMITTED: '已提交', 'NEEDS MORE': '需補交素材', 'AWAITING DELIVERY': '等待 USB 寄送' };
   const production = { 'NOT STARTED': '尚未開始', 'IN PRODUCTION': '製作中', REVIEW: '待確認', COMPLETED: '已完成' };
   const backendNote = page.querySelector('[data-order-backend-note]');
-  if (backendNote && api?.configured) backendNote.textContent = '訂單狀態由 OFFCUT 訂單表同步。';
+  if (backendNote && api?.configured) backendNote.textContent = '訂單狀態由 OFFCUT 訂單服務同步。';
   const set = (selector, value) => { const node = page.querySelector(selector); if (node) node.textContent = value; };
   const render = () => {
     set('[data-order-id]', order.orderId);

@@ -9,9 +9,11 @@
   <link rel="icon" type="image/png" href="./favicon.png.png">
   <link rel="apple-touch-icon" href="./favicon.png.png">
   <link rel="stylesheet" href="style.css?v=offcut-order-flow-2">
-  <script src="order-storage.js?v=offcut-order-flow-2" defer></script>
-  <script src="order-model.js?v=offcut-order-flow-2" defer></script>
-  <script src="checkout.js?v=offcut-order-flow-2" defer></script>
+  <script src="order-storage.js?v=offcut-cloudflare-orders-1" defer></script>
+  <script src="order-model.js?v=offcut-cloudflare-orders-1" defer></script>
+  <script src="site-config.js?v=offcut-orders-backend-1" defer></script>
+  <script src="order-api.js?v=offcut-orders-backend-1" defer></script>
+  <script src="checkout.js?v=offcut-cloudflare-orders-1" defer></script>
 </head>
 <body class="checkout-page">
   <header class="topbar" aria-label="網站標題">
@@ -101,7 +103,7 @@
           <span>ORDER ID</span>
           <strong data-checkout-order-id></strong>
           <button type="button" class="copy-quiet" data-copy-order>複製</button>
-          <small>訂單會保存在此瀏覽器與裝置。</small>
+          <small data-checkout-backend-note>訂單會保存在 OFFCUT 訂單服務。</small>
           <small data-checkout-order-copy-feedback aria-live="polite"></small>
         </div>
         <button class="checkout-continue" type="button" data-continue disabled>繼續付款 <span aria-hidden="true">→</span></button>
